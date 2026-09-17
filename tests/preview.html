@@ -1,0 +1,21 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>蒋莫闻 · 接收器验收</title><style>
+body{margin:0;background:#101915;color:#deded0;font:15px/1.8 system-ui;padding:40px}h1{font-weight:550;letter-spacing:4px;color:#dac897}main{max-width:650px}p{color:#b6c4ae}button,input{font:inherit;padding:10px;border-radius:6px;border:1px solid #64715a;background:#263827;color:#e7e7d8;margin:5px 3px}input{width:90%}pre{font:12px/1.6 monospace;white-space:pre-wrap;max-height:290px;overflow:auto;background:#172a20;padding:12px}small{color:#95a98e}#notification{padding:10px;color:#eed28b}a{color:#d4be86}
+</style></head><body><main><small>隔离验收页 · 模拟酒馆事件 / 不调用真实模型</small><h1>北城 · 案卷工作台</h1><p>此页面从实际发布接收器启动内置脚本，测试页面、直连传输和入档流程。模拟服务只返回固定动作，不能代替真实模型效果评估。</p><p>测试配置：<code>http://127.0.0.1:8197/v1</code> · 模型 <code>mock</code> · 无需密钥。</p><input id="player" aria-label="玩家行动" value="勘查现场"><div><button id="send">发送模拟行动</button><button id="complete">完成模拟正文</button><button id="stop">停止生成</button><button id="quiet">模拟记忆插件静默请求</button></div><div id="notification" role="status">等待接收器启动…</div><h3>公开变量与请求观测</h3><pre id="log"></pre><a href="/opening" target="_blank">查看保留的开场主页（六个开场）</a></main>
+<script>
+const events=new Map(),variables=new Map(),names=['CHAT_COMPLETION_SETTINGS_READY','TEXT_COMPLETION_SETTINGS_READY','MESSAGE_RECEIVED','GENERATION_STOPPED','GENERATION_ENDED','CHAT_CHANGED','CHAT_LOADED','CHARACTER_FIRST_MESSAGE_SELECTED','MESSAGE_EDITED','MESSAGE_DELETED','MESSAGE_SWIPED','MESSAGE_SWIPE_DELETED','MESSAGE_UPDATED'];
+const context={chat:[{is_user:false,name:'蒋莫闻',mes:'枫林小区天台蓄水池发现人体组织。'}],chatId:'isolated-browser-test-v1',characterId:0,characters:[{avatar:'jmw-test.png',data:{extensions:{jmw:{id:'jiang-mowen-cases'}}}}],eventTypes:Object.fromEntries(names.map(n=>[n,n])),eventSource:{on(n,f){events.set(n,[...events.get(n)||[],f]);},removeListener(n,f){events.set(n,(events.get(n)||[]).filter(x=>x!==f));}}};
+const emit=async(n,...args)=>{for(const f of [...events.get(n)||[]])await f(...args);};
+window.SillyTavern={getContext:()=>context};window.getVariables=o=>variables.get(o.message_id)||{};window.replaceVariables=(v,o)=>{variables.set(o.message_id,v);document.querySelector('#log').textContent=JSON.stringify(v,null,2);};
+window.toastr={info:notice,success:notice,warning:notice,error:notice};function notice(m){document.querySelector('#notification').textContent=m;}
+const realFetch=window.fetch.bind(window);let requests=0;
+window.fetch=(url,options)=>{if(String(url).startsWith('https://'))return Promise.reject(new Error('隔离页关闭在线更新，验证内置兜底'));requests++;return realFetch(url,options);};
+document.querySelector('#send').onclick=async()=>{
+  context.chat.push({is_user:true,mes:document.querySelector('#player').value});
+  const data={type:'normal',messages:[{role:'system',content:'JMW_CARD_V1'},...context.chat.map(m=>({role:m.is_user?'user':'assistant',content:m.mes}))]};
+  await emit('CHAT_COMPLETION_SETTINGS_READY',data);document.querySelector('#log').textContent=data.messages.at(-1).content;notice('直连请求数：'+requests+'。边界已生成，点击“完成模拟正文”提交。');
+};
+document.querySelector('#complete').onclick=async()=>{context.chat.push({is_user:false,mes:'本轮模拟正文完成。<status_panel>[基本信息|2025年9月15日|09:00|枫林小区|阴][角色档案|警察制服|等待进一步核实][待办事项|登记线索][账本|0|0|0||]</status_panel>'});await emit('MESSAGE_RECEIVED',context.chat.length-1,'normal');await emit('GENERATION_ENDED');notice('正文完成；公开案卷已提交。');};
+document.querySelector('#stop').onclick=async()=>{await emit('GENERATION_STOPPED');notice('已停止；本轮不入档。');};
+document.querySelector('#quiet').onclick=async()=>{const before=requests,data={type:'quiet',messages:[{role:'system',content:'JMW_CARD_V1 记忆摘要'}]};await emit('CHAT_COMPLETION_SETTINGS_READY',data);await emit('GENERATION_ENDED');notice('记忆请求：额外副API调用 '+(requests-before)+' 次；消息数 '+data.messages.length+'；已发出后台结束事件。');};
+window.addEventListener('error',e=>notice('ERROR '+e.message));window.addEventListener('unhandledrejection',e=>notice('ERROR '+e.reason));
+</script><script src="/dist/receiver.js"></script></body></html>

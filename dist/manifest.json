@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "version": "1.0.0",
+  "sha256": "818da27a2d81524f876cb87250449d92a0ee7a877bcf7cd52ae99bc1bef3e089",
+  "urls": [
+    "https://jhyshl.github.io/jiang-mowen-cases/dist/runtime-1.0.0-818da27a2d81.js",
+    "https://cdn.jsdelivr.net/gh/jhyshl/jiang-mowen-cases@main/dist/runtime-1.0.0-818da27a2d81.js",
+    "https://raw.githubusercontent.com/jhyshl/jiang-mowen-cases/main/dist/runtime-1.0.0-818da27a2d81.js"
+  ],
+  "cases": [
+    {
+      "id": "lin",
+      "title": "林小女案",
+      "version": 1
+    },
+    {
+      "id": "professor",
+      "title": "教授夫妇案",
+      "version": 1
+    }
+  ]
+}
