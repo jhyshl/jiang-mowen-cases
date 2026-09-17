@@ -1,13 +1,18 @@
 // 蒋莫闻完整脚本接收器。内置可运行首版；在线更新使用固定仓库的 SHA-256 清单。
 ;(async()=>{
   const SOURCE=window;
-  let host=window;
-  for(let i=0;i<5;i++){try{if(host.SillyTavern?.getContext)break;if(host.parent===host)break;host=host.parent;}catch{break;}}
+  const resolveHost=__HOST_RESOLVER__;
+  const host=resolveHost(SOURCE);
   if(!host.SillyTavern?.getContext)throw new Error('蒋莫闻接收器：未找到酒馆，请启用酒馆助手脚本');
   const SLOT='__JMW_RECEIVER_V1__';
   if(host[SLOT]){host[SLOT].show?.();return;}
   const VERSION=__BUILTIN_VERSION__,BUILTIN=__BUILTIN_GZIP__,BUILTIN_SHA=__BUILTIN_SHA__;
   const MANIFESTS=__MANIFEST_URLS__;
+  const loading=host.document.createElement('button');
+  loading.id='jmw-receiver-status';loading.type='button';loading.textContent='蒋莫闻 · 案卷加载中';
+  loading.style.cssText='position:fixed;right:14px;bottom:82px;z-index:2147483001;background:#26352e;color:#eee7d5;border:1px solid #b59e66;border-radius:8px;padding:10px 15px;font:14px system-ui;cursor:pointer';
+  host.document.body.append(loading);
+  loading.onclick=()=>host.toastr?.info?.(loading.title||'正在启动案件后台','蒋莫闻');
   const bridge={
     getVariables:typeof getVariables==='function'?getVariables:undefined,
     replaceVariables:typeof replaceVariables==='function'?replaceVariables:undefined,
@@ -33,7 +38,7 @@
     // Releases are trusted code from the configured author's repository, never model output.
     const boot=new Function(bundle.code+'\nreturn JMWBundle.bootstrap;')();
     const previous=runtime;runtime=null;await previous?.shutdown();
-    try{runtime=await boot({host,bridge,checkUpdate:check});owner.version=bundle.version;}
+    try{runtime=await boot({host,bridge,checkUpdate:check});owner.version=bundle.version;loading.remove();}
     catch(e){runtime=null;throw e;}
   }
   const allowed=url=>{
@@ -71,7 +76,7 @@
     catch(e){const fallback=old||{code:await bundled(),sha256:BUILTIN_SHA,version:VERSION};await run(fallback);throw e;}
   }
   let poll,settle,focus;
-  async function shutdown(){stopped=true;host.clearInterval(poll);host.clearInterval(settle);host.removeEventListener('focus',focus);host.removeEventListener('online',focus);await runtime?.shutdown();db?.close();if(host[SLOT]===owner)delete host[SLOT];}
+  async function shutdown(){stopped=true;loading.remove();host.clearInterval(poll);host.clearInterval(settle);host.removeEventListener('focus',focus);host.removeEventListener('online',focus);await runtime?.shutdown();db?.close();if(host[SLOT]===owner)delete host[SLOT];}
   try{
     try{db=await database();}catch(e){console.warn('[蒋莫闻接收器] 更新缓存不可用',e.message);}
     let loaded=false;
@@ -81,5 +86,5 @@
     poll=host.setInterval(focus,600000);settle=host.setInterval(()=>{if(scheduled&&!runtime?.busy)void installScheduled().catch(e=>host.toastr?.error?.(e.message,'蒋莫闻更新'));},2000);
     host.addEventListener('focus',focus);host.addEventListener('online',focus);focus();
     SOURCE.addEventListener('pagehide',()=>{void shutdown();},{once:true});
-  }catch(e){await shutdown();host.toastr?.error?.(e.message,'蒋莫闻接收器启动失败');console.error(e);}
+  }catch(e){await shutdown();loading.textContent='蒋莫闻 · 启动失败';loading.title=e.message;host.document.body.append(loading);SOURCE.addEventListener('pagehide',()=>loading.remove(),{once:true});host.toastr?.error?.(e.message,'蒋莫闻接收器启动失败');console.error(e);}
 })();

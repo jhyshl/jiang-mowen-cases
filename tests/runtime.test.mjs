@@ -4,7 +4,7 @@ import {dependency} from '../scripts/deps.mjs';
 import {bootstrap} from '../src/runtime.mjs';
 const {JSDOM}=dependency('jsdom'),{IDBFactory}=dependency('fake-indexeddb');
 const names=['CHAT_COMPLETION_SETTINGS_READY','TEXT_COMPLETION_SETTINGS_READY','MESSAGE_RECEIVED','GENERATION_STOPPED','GENERATION_ENDED','CHAT_CHANGED','CHAT_LOADED','CHARACTER_FIRST_MESSAGE_SELECTED','MESSAGE_EDITED','MESSAGE_DELETED','MESSAGE_SWIPED','MESSAGE_SWIPE_DELETED'];
-async function setup({idb=new IDBFactory(),failure=false,deferred=false}={}) {
+async function setup({idb=new IDBFactory(),failure=false,deferred=false,iframeHost=false}={}) {
   const dom=new JSDOM('<body></body>',{url:'http://localhost:8000'}),host=dom.window;
   Object.defineProperty(host,'indexedDB',{value:idb});
   let calls=0,release,requests=[],errors=[];
@@ -16,10 +16,12 @@ async function setup({idb=new IDBFactory(),failure=false,deferred=false}={}) {
   const store=await new Promise((resolve,reject)=>{const req=idb.open('jmw-case-director',1);req.onupgradeneeded=()=>req.result.createObjectStore('kv');req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});
   await new Promise((resolve,reject)=>{const t=store.transaction('kv','readwrite');t.objectStore('kv').put({endpoint:'https://mock.example/v1',model:'mock',key:'NOT-A-REAL-KEY'},'config');t.oncomplete=resolve;t.onerror=reject;});store.close();
   host.fetch=async(url,init)=>{calls++;requests.push({url,body:JSON.parse(init.body)});if(deferred)await new Promise(r=>{release=r;});if(failure)return{ok:false,status:503};return{ok:true,json:async()=>({choices:[{message:{content:JSON.stringify({mode:'investigate',actions:[{id:'scene',op:'advance',basis:'勘查现场'}],guidance:'恶意泄露陈美娟分尸'})}}]})};};
-  const runtime=await bootstrap({host,bridge});
+  let source=host;
+  if(iframeHost){const frame=host.document.createElement('iframe');frame.style.display='none';host.document.body.append(frame);source=frame.contentWindow;source.SillyTavern={getContext:()=>c};}
+  const runtime=await bootstrap({host:source,bridge});
   const emit=async(n,...args)=>{for(const f of [...events.get(n)||[]])await f(...args);};
   const prompt=(type='normal')=>({type,messages:[{role:'system',content:'JMW_CARD_V1'},...c.chat.map(m=>({role:m.is_user?'user':'assistant',content:m.mes}))]});
-  return{host,c,variables,requests,errors,runtime,emit,prompt,get calls(){return calls;},release:()=>release?.(),close:async()=>{await runtime.shutdown();dom.window.close();},idb};
+  return{host,source,c,variables,requests,errors,runtime,emit,prompt,get calls(){return calls;},release:()=>release?.(),close:async()=>{await runtime.shutdown();dom.window.close();},idb};
 }
 test('Actual runtime waits for direct API, isolates simultaneous quiet requests, and commits only a completed assistant response',async()=>{
   const t=await setup({deferred:true});
@@ -90,4 +92,11 @@ test('Manual case selection persists across restart and original professor greet
     u.c.chatId='professor-original';u.c.chat=[{is_user:false,mes:'幸福花园小区报案，发现两具尸体，是一对大学教授夫妇。'}];await u.emit('CHAT_CHANGED');
     assert.equal((await u.runtime.getPublicState()).id,'professor');
   }finally{await u.close();}
+});
+test('Legacy receiver passing the hidden helper iframe is repaired by runtime host resolution',async()=>{
+  const t=await setup({iframeHost:true});try{
+    assert.ok(t.host.document.querySelector('#jmw-director-root'));
+    assert.equal(t.source.document.querySelector('#jmw-director-root'),null);
+    assert.equal(t.host.document.querySelector('#jmw-director-root').style.display,'');
+  }finally{await t.close();}
 });

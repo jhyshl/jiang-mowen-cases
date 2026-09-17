@@ -16,7 +16,8 @@ const server=createServer(async(req,res)=>{
       res.writeHead(200,{'content-type':'application/json','Access-Control-Allow-Origin':'*'});res.end(JSON.stringify({choices:[{message:{content:JSON.stringify(plan)}}]}));return;
     }
     if(url.pathname==='/opening'){
-      const card=JSON.parse(await readFile(path.join(root,'output/蒋莫闻-案件后台重构-v1.0.0.json'),'utf8'));
+      const {version}=JSON.parse(await readFile(path.join(root,'package.json'),'utf8'));
+      const card=JSON.parse(await readFile(path.join(root,`output/蒋莫闻-案件后台重构-v${version}.json`),'utf8'));
       let html=card.data.extensions.regex_scripts.find(r=>r.scriptName==='开场白美化').replaceString.replace(/^```html\s*/,'').replace(/\s*```$/,'');
       html=html.replace('<head>',`<head><script>window.getChatMessages=async()=>[{message:${JSON.stringify(card.data.first_mes)},swipes:[${JSON.stringify(card.data.first_mes)}]}];window.setChatMessages=async(data)=>{document.body.innerHTML='<p style="color:white;font-size:30px">选择完成：开场 '+data[0].swipe_id+'</p>';};</script>`);
       res.writeHead(200,{'content-type':'text/html; charset=utf-8'});res.end(html);return;

@@ -18,7 +18,8 @@ test('Published manifest, full bundle, receiver fallback and standalone helper e
 test('Importable character card retains unrelated content but removes legacy omniscient MVU and buttons',async t=>{
   const originalPath=process.env.JMW_CARD_SOURCE;
   if(!originalPath){t.skip('Set JMW_CARD_SOURCE when validating a personal card export');return;}
-  const original=JSON.parse(await readFile(originalPath,'utf8')),card=JSON.parse(await readFile('output/蒋莫闻-案件后台重构-v1.0.0.json','utf8'));
+  const {version}=JSON.parse(await readFile('package.json','utf8'));
+  const original=JSON.parse(await readFile(originalPath,'utf8')),card=JSON.parse(await readFile(`output/蒋莫闻-案件后台重构-v${version}.json`,'utf8'));
   const a=original.data,b=card.data;
   for(const key of ['name','description','personality','scenario','mes_example','system_prompt','post_history_instructions'])assert.equal(b[key],a[key],key);
   assert.equal(JSON.stringify(b.alternate_greetings),JSON.stringify(a.alternate_greetings),'all original greetings preserved');

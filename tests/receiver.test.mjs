@@ -19,7 +19,7 @@ test('Actual receiver boots offline, upgrades a verified full bundle, and restor
   try{
     w.eval(await readFile('dist/receiver.js','utf8'));
     await poll(()=>w.document.querySelector('#jmw-director-root'));
-    const receiver=w.__JMW_RECEIVER_V1__;assert.equal(receiver.version,'1.0.0');
+    const receiver=w.__JMW_RECEIVER_V1__;assert.equal(receiver.version,JSON.parse(await readFile('package.json','utf8')).version);
     // Let the automatic offline check finish before requesting an online check.
     await new Promise(r=>setTimeout(r,20));online=true;
     await receiver.checkUpdate(true);assert.equal(receiver.version,'1.1.0');assert.ok(!w.document.querySelector('#jmw-director-root'));
@@ -27,5 +27,23 @@ test('Actual receiver boots offline, upgrades a verified full bundle, and restor
     await assert.rejects(receiver.checkUpdate(true),/Bad test release/);assert.equal(receiver.version,'1.1.0');
     await receiver.shutdown();assert.equal(w.__JMW_RECEIVER_V1__,undefined);
     assert.equal(errors.length,0);
+  }finally{await w.__JMW_RECEIVER_V1__?.shutdown();dom.window.close();}
+});
+test('Receiver running in a hidden Tavern Helper iframe mounts its entry in the visible Tavern document',async()=>{
+  const dom=new JSDOM('<body><div id="chat"></div><iframe style="display:none"></iframe></body>',{url:'http://localhost:8000',runScripts:'outside-only'}),w=dom.window,child=w.document.querySelector('iframe').contentWindow;
+  Object.defineProperty(w,'indexedDB',{value:new IDBFactory()});Object.defineProperty(w,'crypto',{value:webcrypto});
+  Object.defineProperty(child,'crypto',{value:webcrypto});
+  for(const scope of [w,child])Object.assign(scope,{TextEncoder,TextDecoder,Response,Blob,DecompressionStream});
+  const c={chatId:'hidden-frame',characterId:0,characters:[{avatar:'jmw.png',data:{extensions:{jmw:{id:'jiang-mowen-cases'}}}}],chat:[{is_user:false,mes:'枫林小区天台蓄水池发现人体组织。'}],eventTypes:{CHAT_COMPLETION_SETTINGS_READY:'settings'},eventSource:{on(){},removeListener(){}}};
+  w.SillyTavern={getContext:()=>c};Object.defineProperty(child,'SillyTavern',{get:()=>({...c,getContext:()=>c})});
+  w.fetch=async()=>{throw new Error('Offline fixture');};child.console.warn=()=>{};
+  try{
+    child.eval(await readFile('dist/receiver.js','utf8'));
+    await poll(()=>w.document.querySelector('#jmw-director-root')&&!w.document.querySelector('#jmw-receiver-status'));
+    assert.ok(w.__JMW_RECEIVER_V1__);assert.equal(child.__JMW_RECEIVER_V1__,undefined);
+    assert.equal(child.document.querySelector('#jmw-director-root'),null);
+    assert.equal(w.document.querySelector('#jmw-receiver-status'),null);
+    w.document.querySelector('#jmw-director-root').shadowRoot.querySelector('.dock').click();
+    assert.ok(w.document.querySelector('#jmw-director-root').shadowRoot.querySelector('.panel.open'));
   }finally{await w.__JMW_RECEIVER_V1__?.shutdown();dom.window.close();}
 });

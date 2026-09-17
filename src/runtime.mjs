@@ -2,12 +2,13 @@ import {cases,caseById} from './cases/index.mjs';
 import {initialState,projection,publicVariables,parsePlan,applyPlan,narratorEnvelope,directorMessages,callDirector,resolveEndpoint,readStatus,digest,prefixHashes,restoreSnapshot,clone} from './core.mjs';
 import {openStorage} from './storage.mjs';
 import {mountUI} from './ui.mjs';
-export const VERSION=typeof __JMW_VERSION__==='string'?__JMW_VERSION__:'1.0.0';
+import {resolveTavernHost} from './host.mjs';
+export const VERSION=typeof __JMW_VERSION__==='string'?__JMW_VERSION__:'1.0.1';
 const ACTIVE_TYPES=new Set([undefined,'','normal','regenerate','swipe','continue']);
 const MARKER='JMW_CARD_V1';
 
 export async function bootstrap(env) {
-  const {host,bridge={}}=env,ctx=()=>host.SillyTavern?.getContext();
+  const host=resolveTavernHost(env.host),bridge=env.bridge||{},ctx=()=>host.SillyTavern?.getContext();
   if(!ctx()?.eventSource) throw new Error('酒馆尚未就绪，找不到 SillyTavern.getContext()');
   const storage=await openStorage(host),disposers=[];
   let config={endpoint:'',model:'',key:'',remember:false,...await storage.get('config')};
