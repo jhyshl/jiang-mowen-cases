@@ -10,7 +10,7 @@
   const MANIFESTS=__MANIFEST_URLS__;
   const loading=host.document.createElement('button');
   loading.id='jmw-receiver-status';loading.type='button';loading.textContent='蒋莫闻 · 案卷加载中';
-  loading.style.cssText='position:fixed;right:14px;bottom:82px;z-index:2147483001;background:#26352e;color:#eee7d5;border:1px solid #b59e66;border-radius:8px;padding:10px 15px;font:14px system-ui;cursor:pointer';
+  loading.style.cssText='position:fixed;right:14px;top:calc(100dvh - 82px);transform:translateY(-100%);z-index:2147483001;background:#26352e;color:#eee7d5;border:1px solid #b59e66;border-radius:8px;padding:10px 15px;font:14px system-ui;cursor:pointer';
   host.document.body.append(loading);
   loading.onclick=()=>host.toastr?.info?.(loading.title||'正在启动案件后台','蒋莫闻');
   const bridge={

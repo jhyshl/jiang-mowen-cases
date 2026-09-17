@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "version": "1.0.1",
-  "sha256": "4dbc1d64f9d93375d7a0cc73d276478e903d522438c46d0dd173f5d5b9ca76a6",
+  "version": "1.0.2",
+  "sha256": "90e9f555742c1496e4dd20d8096b08e586dee1d8ffeb07cb8cacb30163077f1a",
   "urls": [
-    "https://jhyshl.github.io/jiang-mowen-cases/dist/runtime-1.0.1-4dbc1d64f9d9.js",
-    "https://cdn.jsdelivr.net/gh/jhyshl/jiang-mowen-cases@main/dist/runtime-1.0.1-4dbc1d64f9d9.js",
-    "https://raw.githubusercontent.com/jhyshl/jiang-mowen-cases/main/dist/runtime-1.0.1-4dbc1d64f9d9.js"
+    "https://jhyshl.github.io/jiang-mowen-cases/dist/runtime-1.0.2-90e9f555742c.js",
+    "https://cdn.jsdelivr.net/gh/jhyshl/jiang-mowen-cases@main/dist/runtime-1.0.2-90e9f555742c.js",
+    "https://raw.githubusercontent.com/jhyshl/jiang-mowen-cases/main/dist/runtime-1.0.2-90e9f555742c.js"
   ],
   "cases": [
     {

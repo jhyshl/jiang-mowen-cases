@@ -3,7 +3,7 @@ import {initialState,projection,publicVariables,parsePlan,applyPlan,narratorEnve
 import {openStorage} from './storage.mjs';
 import {mountUI} from './ui.mjs';
 import {resolveTavernHost} from './host.mjs';
-export const VERSION=typeof __JMW_VERSION__==='string'?__JMW_VERSION__:'1.0.1';
+export const VERSION=typeof __JMW_VERSION__==='string'?__JMW_VERSION__:'1.0.2';
 const ACTIVE_TYPES=new Set([undefined,'','normal','regenerate','swipe','continue']);
 const MARKER='JMW_CARD_V1';
 
